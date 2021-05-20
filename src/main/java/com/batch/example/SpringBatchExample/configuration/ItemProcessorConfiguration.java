@@ -22,7 +22,7 @@ public class ItemProcessorConfiguration {
         return new ItemProcessor<Contract, ContractHistory>() {
             @Override
             public ContractHistory process(Contract contract) throws Exception {
-                log.info("Contract in Processing: "+ contract);
+                log.info("Contract in Processing: "+ contract.getHolderName());
                 log.info("Processing Data: " + contract.getContractId() + "Record No: " + count.incrementAndGet());
 //                ContractHistory contractHistory = objectMapper.convertValue(contract, ContractHistory.class);
 

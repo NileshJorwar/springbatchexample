@@ -21,7 +21,7 @@ public class ItemReaderConfiguration {
         JdbcPagingItemReader<Contract> jdbcPagingItemReader = new
                 JdbcPagingItemReader<>();
         jdbcPagingItemReader.setDataSource(dataSource);
-        jdbcPagingItemReader.setPageSize(1000);
+        jdbcPagingItemReader.setPageSize(500);
 
         PagingQueryProvider queryProvider = createQuery();
         jdbcPagingItemReader.setQueryProvider(queryProvider);
@@ -32,9 +32,9 @@ public class ItemReaderConfiguration {
     private PagingQueryProvider createQuery(){
         MySqlPagingQueryProvider queryProvider = new MySqlPagingQueryProvider();
         queryProvider.setSelectClause("SELECT * ");
-        queryProvider.setFromClause("FROM CONTRACT ");
+        queryProvider.setFromClause("FROM contract ");
         queryProvider.setSortKeys(sortByCreationDate());
-        return null;
+        return queryProvider;
     }
 
     private Map<String, Order> sortByCreationDate(){
