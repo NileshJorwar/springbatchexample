@@ -4,6 +4,7 @@ import com.batch.example.SpringBatchExample.entity.Contract;
 import com.batch.example.SpringBatchExample.entity.ContractHistory;
 import com.batch.example.SpringBatchExample.entity.User;
 import com.batch.example.SpringBatchExample.tasklets.CsvReaderTasklet;
+import com.batch.example.SpringBatchExample.tasklets.PassParamToContextTasklet;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -11,6 +12,7 @@ import org.springframework.batch.core.configuration.annotation.DefaultBatchConfi
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.step.tasklet.TaskletStep;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
@@ -31,15 +33,24 @@ public class BatchConfigurer extends DefaultBatchConfigurer {
     public Job startJob(JobBuilderFactory jobBuilderFactory,
                         Step loadCsvToDBStep,
                         Step transferDataFromOneTableToAnother,
-                        Step etlLoad) {
+                        Step etlLoad,
+                        TaskletStep passParamToContext) {
         return jobBuilderFactory.get("contractEffective")
                 .incrementer(new RunIdIncrementer())
-                .start(loadCsvToDBStep)
+                .start(passParamToContext)
+                .next(loadCsvToDBStep)
                 .next(etlLoad)
                 .next(transferDataFromOneTableToAnother)
                 .build();
     }
 
+    @Bean
+    public TaskletStep passParamToContext(StepBuilderFactory stepBuilderFactory, PassParamToContextTasklet passParamToContextTasklet)
+    {
+        return stepBuilderFactory.get("param context")
+                .tasklet(passParamToContextTasklet)
+                .build();
+    }
     @Bean
     public Step transferDataFromOneTableToAnother(StepBuilderFactory stepBuilderFactory,
                                                   ItemReader<Contract> itemReader,
