@@ -4,7 +4,6 @@ import com.batch.example.SpringBatchExample.entity.Contract;
 import com.batch.example.SpringBatchExample.entity.ContractHistory;
 import com.batch.example.SpringBatchExample.entity.User;
 import com.batch.example.SpringBatchExample.tasklets.CsvReaderTasklet;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -20,31 +19,33 @@ import org.springframework.batch.item.file.LineMapper;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
 
 @Configuration
 @Slf4j
 public class BatchConfigurer extends DefaultBatchConfigurer {
 
     @Bean
-    public Job startJob(JobBuilderFactory jobBuilderFactory, Step step1, Step loadCsvToDBStep) {
+    public Job startJob(JobBuilderFactory jobBuilderFactory,
+                        Step loadCsvToDBStep,
+                        Step transferDataFromOneTableToAnother,
+                        Step etlLoad) {
         return jobBuilderFactory.get("contractEffective")
                 .incrementer(new RunIdIncrementer())
                 .start(loadCsvToDBStep)
-                .next(step1)
+                .next(etlLoad)
+                .next(transferDataFromOneTableToAnother)
                 .build();
     }
 
     @Bean
-    public Step step1(StepBuilderFactory stepBuilderFactory,
-                      ItemReader<Contract> itemReader,
-                      ItemProcessor<Contract, ContractHistory> itemProcessor,
-                      ItemWriter<ContractHistory> itemWriter) throws Exception {
-        return stepBuilderFactory.get("step1")
+    public Step transferDataFromOneTableToAnother(StepBuilderFactory stepBuilderFactory,
+                                                  ItemReader<Contract> itemReader,
+                                                  ItemProcessor<Contract, ContractHistory> itemProcessor,
+                                                  ItemWriter<ContractHistory> itemWriter) throws Exception {
+        return stepBuilderFactory.get("transferDataFromOneTableToAnother")
                 .<Contract, ContractHistory>chunk(500)
                 .reader(itemReader)
                 .processor(itemProcessor)
@@ -53,9 +54,9 @@ public class BatchConfigurer extends DefaultBatchConfigurer {
     }
 
     @Bean
-    public Step loadCsvToDBStep(StepBuilderFactory stepBuilderFactory) throws Exception {
+    public Step loadCsvToDBStep(StepBuilderFactory stepBuilderFactory, CsvReaderTasklet csvReaderTasklet) throws Exception {
         return stepBuilderFactory.get("load-Csv-To-DB")
-                .tasklet(new CsvReaderTasklet())
+                .tasklet(csvReaderTasklet)
                 .build();
     }
 
@@ -64,7 +65,7 @@ public class BatchConfigurer extends DefaultBatchConfigurer {
                         ItemReader<User> fileItemReader,
                         ItemProcessor<User, User> csvProcessor,
                         ItemWriter<User> writer
-    ) throws Exception {
+    ) {
         return stepBuilderFactory.get("ETL-Load")
                 .<User, User>chunk(100)
                 .reader(fileItemReader)
@@ -104,12 +105,12 @@ public class BatchConfigurer extends DefaultBatchConfigurer {
     }
 
     @Bean
-    public ItemWriter<User> writer(){
+    public ItemWriter<User> writer() {
         return new DBWriter();
     }
 
     @Bean
-    public ItemProcessor<User,User> csvProcessor(){
+    public ItemProcessor<User, User> csvProcessor() {
         return new CsvProcessor();
     }
 }
