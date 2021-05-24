@@ -2,12 +2,16 @@ package com.batch.example.SpringBatchExample.controller;
 
 import com.batch.example.SpringBatchExample.repo.ContractRepo;
 import com.batch.example.SpringBatchExample.entity.Contract;
+import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,15 +21,11 @@ import java.util.List;
 import java.util.Random;
 
 @RestController
+@AllArgsConstructor
 public class BatchController {
 
-    @Autowired
     ContractRepo repo;
-
-    @Autowired
     JobLauncher jobLauncher;
-
-    @Autowired
     private Job job;
 
     @GetMapping("/insert")
@@ -46,16 +46,22 @@ public class BatchController {
         }
         repo.saveAll(contractList);
         return "Saved Successfully";
-
     }
 
     @SneakyThrows
     @GetMapping("/start-batch")
-    public String startBatch() {
+    public ResponseEntity<?> startBatch() {
         JobParameters jobParameters = new JobParametersBuilder()
                 .addLong("time", System.currentTimeMillis()).toJobParameters();
 
-        jobLauncher.run(job, jobParameters);
-        return "batch started....";
+        JobExecution jobExecution = jobLauncher.run(job, jobParameters);
+
+        ResponseEntity<String> responseEntity;
+
+        if (jobExecution.getStatus().isRunning())
+            responseEntity = ResponseEntity.status(HttpStatus.OK).body("Job Running");
+        else
+            responseEntity = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
+        return responseEntity;
     }
 }
