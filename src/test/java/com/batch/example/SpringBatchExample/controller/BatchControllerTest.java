@@ -11,9 +11,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.batch.core.*;
 import org.springframework.batch.core.launch.JobLauncher;
-import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
-import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteException;
-import org.springframework.batch.core.repository.JobRestartException;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +20,6 @@ import static org.mockito.Mockito.*;
 
 @SpringBootTest
 class BatchControllerTest {
-
     ContractRepo contractRepo;
     @Mock
     JobLauncher jobLauncher;
@@ -43,10 +39,9 @@ class BatchControllerTest {
         batchControllerTest = spy(new BatchController(contractRepo, jobLauncher, job));
     }
 
-    @AfterEach
+    @After
     public void tearDown(){
         batchControllerTest = null;
-        assertNull(batchControllerTest);
     }
 
     @Test
@@ -57,12 +52,10 @@ class BatchControllerTest {
     @SneakyThrows
     @Test
     public void startBatch_shouldReturnResponse(){
-
         BatchStatus batchStatus = BatchStatus.STARTED;
         doReturn(jobExecution).when(jobLauncher).run(any(),any());
         doReturn(jobInstance).when(jobExecution).getJobInstance();
         doReturn(batchStatus).when(jobExecution).getStatus();
-
         ResponseEntity<String> expectedRes = new ResponseEntity<>(HttpStatus.OK);
 
         ResponseEntity<?> actualRes = batchControllerTest.startBatch();
@@ -72,18 +65,15 @@ class BatchControllerTest {
         assertNotNull(actualRes);
         assertEquals(actualRes.getStatusCode(),expectedRes.getStatusCode());
         assertEquals(actualRes.getBody(),"Job Running");
-
     }
 
     @SneakyThrows
     @Test
     public void startBatch_shouldReturnErrorResponse(){
-
         BatchStatus batchStatus = BatchStatus.FAILED;
         doReturn(jobExecution).when(jobLauncher).run(any(),any());
         doReturn(jobInstance).when(jobExecution).getJobInstance();
         doReturn(batchStatus).when(jobExecution).getStatus();
-
         ResponseEntity<String> expectedRes = new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 
         ResponseEntity<?> actualRes = batchControllerTest.startBatch();
@@ -93,6 +83,5 @@ class BatchControllerTest {
         assertNotNull(actualRes);
         assertEquals(actualRes.getStatusCode(),expectedRes.getStatusCode());
         assertEquals(actualRes.getBody(),"Error");
-
     }
 }

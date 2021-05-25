@@ -24,8 +24,8 @@ import java.util.Random;
 @AllArgsConstructor
 public class BatchController {
 
-    ContractRepo repo;
-    JobLauncher jobLauncher;
+    private ContractRepo repo;
+    private JobLauncher jobLauncher;
     private Job job;
 
     @GetMapping("/insert")
